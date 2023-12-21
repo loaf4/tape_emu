@@ -12,7 +12,7 @@ struct DelayConfig {
 
 class TapeDrive : public Tape {
     private:
-        std::vector<uint32_t> _data;
+        std::vector<int32_t> _data;
         mutable size_t _pos;
         DelayConfig _delays;
 
@@ -23,8 +23,8 @@ class TapeDrive : public Tape {
         void move_prev() const override;
         void move_to_first() const override;
         void move_to_last() const override;
-        uint32_t read() const override;
-        void write(uint32_t) override;
+        int32_t read() const override;
+        void write(int32_t) override;
         void read_from_file(std::string);
         void write_to_file(std::string);
         void read_config(std::string);

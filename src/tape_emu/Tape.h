@@ -10,8 +10,8 @@ class Tape {
         virtual void move_prev() const = 0;
         virtual void move_to_first() const = 0;
         virtual void move_to_last() const = 0;
-        virtual uint32_t read() const = 0;
-        virtual void write(uint32_t) = 0;
+        virtual int32_t read() const = 0;
+        virtual void write(int32_t) = 0;
         virtual size_t size() const = 0;
 };
 

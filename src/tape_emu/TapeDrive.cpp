@@ -1,3 +1,4 @@
+#include <iostream>
 #include <filesystem>
 #include <fstream>
 #include <thread>
@@ -36,12 +37,12 @@ void TapeDrive::move_to_last() const {
     }
 }
 
-uint32_t TapeDrive::read() const {
+int32_t TapeDrive::read() const {
     std::this_thread::sleep_for(std::chrono::milliseconds(_delays.rw_delay));
     return _data[_pos];
 }
 
-void TapeDrive::write(uint32_t value) {
+void TapeDrive::write(int32_t value) {
     std::this_thread::sleep_for(std::chrono::milliseconds(_delays.rw_delay));
     if (_pos < _data.size()) {
         _data[_pos] = value;
@@ -51,13 +52,13 @@ void TapeDrive::write(uint32_t value) {
 }
 
 void TapeDrive::read_from_file(std::string filename) {
-    std::ifstream fin;
+    std::ifstream fin(filename);
 
-    fin.open(filename);
     if (fin.is_open()) {
-        uint32_t tmp;
-        while (!fin.eof()) {
+        while (true) {
+            int32_t tmp;
             fin >> tmp;
+            if (fin.eof()) { break; }
             _data.push_back(tmp);
         }
     } else {
@@ -73,7 +74,7 @@ void TapeDrive::write_to_file(std::string filename) {
     fout.open(filename);
     if (fout.is_open()) {
         for (const auto& n : _data) {
-            fout << n;
+            fout << n << " ";
         }
     } else {
         throw std::runtime_error(filename + " couldn't open");
@@ -135,7 +136,7 @@ void sort_tape(const Tape& tape_in, Tape& tape_out, const size_t memory) {
         fs::create_directory(tmp_path);
     }
     
-    std::vector<uint32_t> tmp(memory);
+    std::vector<int32_t> tmp(memory);
     tape_in.move_to_first();
 
     // creating first step sorted tapes
@@ -148,7 +149,7 @@ void sort_tape(const Tape& tape_in, Tape& tape_out, const size_t memory) {
 
         sort(tmp.begin(), tmp.end());
         TapeDrive tape_tmp(tmp_path.string() + std::to_string(++cnt_out) + ".txt");
-        for (const uint32_t n : tmp) {
+        for (const int32_t n : tmp) {
             tape_tmp.write(n);
             tape_tmp.move_next();
         }

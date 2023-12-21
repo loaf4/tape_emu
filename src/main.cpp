@@ -16,10 +16,12 @@ TapeDrive merge_tape(const TapeDrive& t1, const TapeDrive& t2) {
     while (i < t1.size() && j < t2.size()) {
         if (t1.read() < t2.read()) {
             res.write(t1.read());
+            res.move_next();
             t1.move_next();
             ++i;
         } else {
             res.write(t2.read());
+            res.move_next();
             t2.move_next();
             ++j;
         }
@@ -30,6 +32,7 @@ TapeDrive merge_tape(const TapeDrive& t1, const TapeDrive& t2) {
     if (i < t1.size()) {
         while (i < t1.size()) {
             res.write(t1.read());
+            res.move_next();
             t1.move_next();
             ++i;
         }
@@ -37,6 +40,7 @@ TapeDrive merge_tape(const TapeDrive& t1, const TapeDrive& t2) {
     if (j < t2.size()) {
         while (j < t2.size()) {
             res.write(t2.read());
+            res.move_next();
             t2.move_next();
             ++j;
         }
@@ -50,33 +54,34 @@ void sort_tape(const TapeDrive& tape_in, TapeDrive& tape_out, const size_t memor
         return;
     }
 
-    fs::path tmp_path {fs::current_path().parent_path() / "tmp/"};
+    fs::path tmp_path {fs::current_path().parent_path() / "tmp"};
     if (!fs::exists(tmp_path)) {
         fs::create_directory(tmp_path);
     } else {
-        fs::remove_all(tmp_path);
+        //fs::remove_all(tmp_path);
     }
     
-    std::vector<uint32_t> tmp(memory);
+    std::vector<int32_t> ram;
     tape_in.move_to_first();
 
     // creating first step sorted tapes
-    size_t i {0}, cnt_out {0};
+    size_t i {0}, cnt_mem {0}, cnt_out {0};
     while (i < tape_in.size()) {
-        for ( ; i < tape_in.size() && i < memory; ++i) {
-            tmp[i % memory] = tape_in.read();
+        for ( ; i < tape_in.size() && cnt_mem < memory; ++i, ++cnt_mem) {
+            ram.push_back(tape_in.read());
             tape_in.move_next();
         }
 
-        sort(tmp.begin(), tmp.end());
+        sort(ram.begin(), ram.end());
         TapeDrive tape_tmp;
-        for (const uint32_t n : tmp) {
+        for (const int32_t n : ram) {
             tape_tmp.write(n);
             tape_tmp.move_next();
         }
-        tape_tmp.write_to_file(tmp_path.string() + std::to_string(++cnt_out) + ".txt");
+        tape_tmp.write_to_file((tmp_path / (std::to_string(++cnt_out) + ".txt")).string());
 
-        tmp.clear();
+        cnt_mem = 0;
+        ram.resize(0);
     }
 
     // sorting all temporary tapes to one
@@ -90,37 +95,46 @@ void sort_tape(const TapeDrive& tape_in, TapeDrive& tape_out, const size_t memor
                 break;
             }
 
-            TapeDrive t1(tmp_path.string() + std::to_string(i + 1) + ".txt");
-            TapeDrive t2(tmp_path.string() + std::to_string(i + 2) + ".txt");
+            TapeDrive t1((tmp_path / (std::to_string(i + 1) + ".txt")).string());
+            TapeDrive t2((tmp_path / (std::to_string(i + 2) + ".txt")).string());
             TapeDrive tape_tmp {merge_tape(t1, t2)};
 
-            tape_tmp.write_to_file(tmp_path.string() + std::to_string(++cnt_out) + ".txt");
+            fs::remove(tmp_path / (std::to_string(i + 1) + ".txt"));
+            fs::remove(tmp_path / (std::to_string(i + 2) + ".txt"));
+
+            if (cnt_in == 2) {
+                tape_out = tape_tmp;
+                if (fs::exists(tmp_path)) {
+                    fs::remove_all(tmp_path);
+                }
+                //tape_tmp.write_to_file((tmp_path.parent_path().parent_path().parent_path() / "resources" / "output.txt").string());
+                return;
+            }
+            tape_tmp.write_to_file((tmp_path / (std::to_string(++cnt_out) + ".txt")).string());
         }
         cnt_in = 0;
     }
 
     if (fs::exists(tmp_path)) {
-        //fs::remove_all(tmp_path);
+        fs::remove_all(tmp_path);
     }
 }
 
 int main(int argc, char* argv[]) {
 
-
-    if (argc < 3 || argc > 4) {
-        std::cerr << "Invalid number of input arguments (expected 3 or 4)" << std::endl;
+    if (argc != 4) {
+        std::cerr << "Invalid number of input arguments (expected 4)" << std::endl;
         exit(-1);
     }
-    if (argc == 4) {}
 
     fs::path resource_path {fs::current_path().parent_path().parent_path() / "resources"};
 
     TapeDrive tape_input(resource_path / argv[1]);
     TapeDrive tape_output;
 
-    sort_tape(tape_input, tape_output, 8);
+    sort_tape(tape_input, tape_output, atoi(argv[3]));
 
-    //tape_output.write_to_file(resource_path.string() + argv[2]);
+    tape_output.write_to_file((resource_path / argv[2]).string());
 
     return 0;
 }
