@@ -14,7 +14,7 @@ class TapeDrive : public Tape {
     private:
         std::vector<int32_t> _data;
         mutable size_t _pos;
-        DelayConfig _delays;
+        static DelayConfig _delays;
 
     public:
         TapeDrive();
@@ -27,7 +27,7 @@ class TapeDrive : public Tape {
         void write(int32_t) override;
         void read_from_file(std::string);
         void write_to_file(std::string);
-        void read_config(std::string);
+        static void read_config(std::string);
         size_t size() const override;
 };
 

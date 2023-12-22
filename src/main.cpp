@@ -57,8 +57,6 @@ void sort_tape(const TapeDrive& tape_in, TapeDrive& tape_out, const size_t memor
     fs::path tmp_path {fs::current_path().parent_path() / "tmp"};
     if (!fs::exists(tmp_path)) {
         fs::create_directory(tmp_path);
-    } else {
-        //fs::remove_all(tmp_path);
     }
     
     std::vector<int32_t> ram;
@@ -84,12 +82,13 @@ void sort_tape(const TapeDrive& tape_in, TapeDrive& tape_out, const size_t memor
         ram.resize(0);
     }
 
-    // sorting all temporary tapes to one
+    // sorting all temporary tapes to tape_out
     size_t cnt_in {0};
     while (cnt_out > 1) {
         i = 0;
         std::swap(cnt_out, cnt_in);
         for ( ; i < cnt_in; i += 2) {
+            // if in /tmp directory odd number of files - last file saving without changes
             if (i + 1 == cnt_in) { 
                 fs::rename(tmp_path / (std::to_string(cnt_in) + ".txt"), tmp_path / (std::to_string(++cnt_out) + ".txt"));
                 break;
@@ -107,7 +106,6 @@ void sort_tape(const TapeDrive& tape_in, TapeDrive& tape_out, const size_t memor
                 if (fs::exists(tmp_path)) {
                     fs::remove_all(tmp_path);
                 }
-                //tape_tmp.write_to_file((tmp_path.parent_path().parent_path().parent_path() / "resources" / "output.txt").string());
                 return;
             }
             tape_tmp.write_to_file((tmp_path / (std::to_string(++cnt_out) + ".txt")).string());
@@ -122,17 +120,18 @@ void sort_tape(const TapeDrive& tape_in, TapeDrive& tape_out, const size_t memor
 
 int main(int argc, char* argv[]) {
 
-    if (argc != 4) {
+    if (argc != 5) {
         std::cerr << "Invalid number of input arguments (expected 4)" << std::endl;
         exit(-1);
     }
+    TapeDrive::read_config(argv[3]);
 
     fs::path resource_path {fs::current_path().parent_path().parent_path() / "resources"};
 
     TapeDrive tape_input(resource_path / argv[1]);
     TapeDrive tape_output;
 
-    sort_tape(tape_input, tape_output, atoi(argv[3]));
+    sort_tape(tape_input, tape_output, atoi(argv[4]));
 
     tape_output.write_to_file((resource_path / argv[2]).string());
 
